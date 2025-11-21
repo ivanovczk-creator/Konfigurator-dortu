@@ -3,8 +3,8 @@ import { OrderState, LOCATIONS } from "../types";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
+  // Silently fail if no key is present, returning null to trigger fallback
   if (!apiKey) {
-    console.error("API Key not found");
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -12,10 +12,18 @@ const getClient = () => {
 
 export const generateCakeDescription = async (order: OrderState): Promise<string> => {
   const ai = getClient();
-  if (!ai) return "Omlouváme se, AI asistent není momentálně k dispozici.";
-
-  const location = LOCATIONS.find(l => l.id === order.locationId);
   
+  // Fallback message logic (Smart Template)
+  const smartFallback = () => {
+    const sizeText = order.size === 'Vlastní počet porcí' ? order.customPortions : order.size;
+    return `Výborná volba! Váš dort ve tvaru ${order.shape} (${sizeText}) s korpusem ${order.corpus} a lahodnou náplní ${order.filling} připravíme s maximální péčí z těch nejkvalitnějších surovin, aby byl ozdobou vaší oslavy.`;
+  };
+
+  // If no AI client (no API key), use smart fallback immediately
+  if (!ai) {
+    return smartFallback();
+  }
+
   const prompt = `
     Jsi zkušený cukrář. Vytvoř lákavý, krátký (max 2 věty) popis dortu pro zákazníka na základě této objednávky, aby se na něj těšil.
     Buď kreativní a poetický.
@@ -35,9 +43,9 @@ export const generateCakeDescription = async (order: OrderState): Promise<string
       contents: prompt,
     });
     
-    return response.text || "Váš dort bude připraven s láskou.";
+    return response.text || smartFallback();
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Nepodařilo se načíst popis od AI, ale váš dort bude určitě skvělý!";
+    return smartFallback();
   }
 };
