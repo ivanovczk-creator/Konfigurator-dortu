@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // Robustly load API key: check .env file first (env.API_KEY), then system env vars (process.env.API_KEY) for Netlify
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY),
+      // Robustly load API key: check .env, then system env, then use the provided hardcoded key as backup
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY || "AIzaSyBBLCD7k1lgljXCR6nPrylGnsoOdT1qqqI"),
     },
   };
 });
